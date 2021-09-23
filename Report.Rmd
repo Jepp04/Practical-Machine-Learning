@@ -1,0 +1,148 @@
+---
+title: "Manner of Excercise Prediction"
+author: "Ulrich v. Staden"
+date: "23/09/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Executive Summary
+The data for this project was provided by the following link: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har
+The Data given to be analised contians a total of a 161 variables and over 19000 obsevations, this indicates that the data size was quite large.
+The Data contains measurements from 4 different accelerometers based on the belt, arm, dumbell and forearm. These accelerometers measured values
+between 6 diffferent people on different time stamps.
+
+There are 5 different levels (A,B,C,D,E) describing the way of use of the 4 different excersises, under the variable called 'classe'. This classe 
+variable was the outcome of each observation and the rest of the variables were the predictors. 
+
+Based on the analysis and the results obtained within this report, the following table presents the accuracy and out of sample errors for the 3 
+different methods used.
+
+|        Method       | Accuracy | Out of Sample Error   |
+|:-------------------:|:--------:|:---------------------:|
+|    Random Forest    |  0.9987  | 0.0013                |
+|  Gradient Boosting  |  0.9857  | 0.0143                |
+| Linear Discriminant |  0.7326  | 0.2674                |
+
+The best solution according to the table was the Random Forest approach and therefor further used to predict the test cases given.
+
+## Analysis and Design
+### Environemnt Setup
+#### Libraries
+
+The following libraries were added for this project to be able to train, validate and predict data. The last 2 libraries added supports and 
+enables the system to do multiprocessing during training to increase the speed of the training process.
+```{r message=FALSE}
+library(e1071)
+library(forecast)
+library(caret)
+library(parallel)
+library(doParallel)
+```
+
+#### Setup Multprocessing
+```{r message=FALSE}
+cluster <- makeCluster(detectCores() - 1)
+registerDoParallel(cluster)
+```
+
+#### Set Seed and Load data
+```{r cache=TRUE}
+# Set Seed
+set.seed(1234)
+
+# Load Data
+Data <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
+TestCases <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+
+```
+A seed were set for reproducibility of the results within this report. There are 2 data sources acquired, first the actual data to be used for
+training, validation and testing and the second data source provides 20 specific observations or cases on which the final model should be used 
+to predict their outcome.
+
+### Preprocessing
+
+The following code removed unwanted and unnecessary variables from the data.
+```{r Data, TestCases, cache=TRUE}
+# Remove specific columns from loaded data. 
+Data <- Data[,-c(1,3,4,5)]
+# TestCases <- TestCases[,-c(1,3,4,5)]
+# Remove all columns containing an NA value.
+Data <- Data[, colSums(is.na(Data)) == 0]
+# TestCases <- TestCases[, colSums(is.na(Data)) == 0]
+# Remove all columns with very little or zero variance.
+Data <- Data[,-nearZeroVar(Data)]
+# TestCases <- TestCases[,-nearZeroVar(Data)]
+```
+
+### Slicing Data
+
+```{r}
+Partition <- createDataPartition(y = Data$classe,p = 0.80,list = FALSE)
+
+Training <- data.frame( Data[Partition,])
+Testing <- data.frame(Data[-Partition,])
+```
+
+The data obtained were sliced into 80% random observations of the data for training and validation purposes and 20% for testing.
+
+### Set Validation
+```{r cache=TRUE}
+# Set Train Control for Cross validation
+trainC <- trainControl(method = "cv", number = 5, allowParallel = T)
+```
+
+Setting Validation up for cross validation with a K fold of 5 instead of 10, because of the large amount of observations that exist.
+
+### Training and Cross Validation Results
+Three different models were attempted and cross validated to determine the best model for the solution.
+
+#### Random Forest Method
+```{r cache=TRUE}
+modFit_rf <- train(classe~.,method = "rf",data = Training, trControl = trainC)
+modFit_rf
+```
+#### Gradient Boosting Method
+```{r cache=TRUE}
+modFit_gbm <- train(classe~.,method = "gbm" ,data = Training, trControl = trainC,verbose = FALSE)
+modFit_gbm
+```
+#### Linear Discriminant Method
+```{r cache=TRUE}
+modFit_lda <- train(classe~.,method = "lda" ,data = Training, trControl = trainC)
+modFit_lda
+```
+
+### Prediction and Accuracy
+#### Random Forest Method
+```{r cache=TRUE}
+predict_rf <- predict(modFit_rf,Testing)
+confusionMatrix(predict_rf, as.factor(Testing$classe))$over
+```
+#### Gradient Boosting Method
+```{r cache=TRUE}
+predict_gbm <- predict(modFit_gbm,Testing)
+confusionMatrix(predict_gbm, as.factor(Testing$classe))$over
+```
+#### Linear Discriminant Method
+```{r cache=TRUE}
+predict_lda <- predict(modFit_lda,Testing)
+confusionMatrix(predict_lda, as.factor(Testing$classe))$over
+```
+### Predictions on the 20 Test Cases (Random Forest Method)
+```{r cache=TRUE}
+predict(modFit_rf,TestCases)
+```
+
+### Appendix
+```{r predict_rf,predict_gbm,predict_lda,cache=TRUE}
+eqPred <- (predict_rf==Testing$classe)
+qplot(predict_rf,classe ,data = Testing,colour = eqPred)
+eqPred <- (predict_gbm==Testing$classe)
+qplot(predict_gbm,classe ,data = Testing,colour = eqPred)
+eqPred <- (predict_lda==Testing$classe)
+qplot(predict_lda,classe ,data = Testing,colour = eqPred)
+```
