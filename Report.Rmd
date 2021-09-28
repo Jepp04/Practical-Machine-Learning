@@ -69,13 +69,10 @@ The following code removed unwanted and unnecessary variables from the data.
 ```{r Data, TestCases, cache=TRUE}
 # Remove specific columns from loaded data. 
 Data <- Data[,-c(1,3,4,5)]
-# TestCases <- TestCases[,-c(1,3,4,5)]
 # Remove all columns containing an NA value.
 Data <- Data[, colSums(is.na(Data)) == 0]
-# TestCases <- TestCases[, colSums(is.na(Data)) == 0]
 # Remove all columns with very little or zero variance.
 Data <- Data[,-nearZeroVar(Data)]
-# TestCases <- TestCases[,-nearZeroVar(Data)]
 ```
 
 ### Slicing Data

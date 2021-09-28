@@ -238,13 +238,10 @@ TestCases &lt;- read.csv(&quot;https://d396qusza40orc.cloudfront.net/predmachlea
 <p>The following code removed unwanted and unnecessary variables from the data.</p>
 <pre class="r"><code># Remove specific columns from loaded data. 
 Data &lt;- Data[,-c(1,3,4,5)]
-# TestCases &lt;- TestCases[,-c(1,3,4,5)]
 # Remove all columns containing an NA value.
 Data &lt;- Data[, colSums(is.na(Data)) == 0]
-# TestCases &lt;- TestCases[, colSums(is.na(Data)) == 0]
 # Remove all columns with very little or zero variance.
-Data &lt;- Data[,-nearZeroVar(Data)]
-# TestCases &lt;- TestCases[,-nearZeroVar(Data)]</code></pre>
+Data &lt;- Data[,-nearZeroVar(Data)]</code></pre>
 </div>
 <div id="slicing-data" class="section level3">
 <h3>Slicing Data</h3>
