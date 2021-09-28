@@ -138,11 +138,22 @@ predict(modFit_rf,TestCases)
 ```
 
 ### Appendix
+#### Random Forest
 ```{r predict_rf,predict_gbm,predict_lda,cache=TRUE}
+plot(modFit_rf)
 eqPred <- (predict_rf==Testing$classe)
 qplot(predict_rf,classe ,data = Testing,colour = eqPred)
+```
+
+#### Gradient Boosting Method
+```{r}
+plot(modFit_gbm)
 eqPred <- (predict_gbm==Testing$classe)
 qplot(predict_gbm,classe ,data = Testing,colour = eqPred)
+```
+
+#### Linear Discriminant Method
+```{r}
 eqPred <- (predict_lda==Testing$classe)
 qplot(predict_lda,classe ,data = Testing,colour = eqPred)
 ```
